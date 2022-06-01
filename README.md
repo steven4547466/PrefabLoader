@@ -1,6 +1,6 @@
 # PrefabLoader
 
-Prefab loader allows you to load unity `.prefab` files directly into SCP SL. However, it only supports primitive types (cube, cyllinder, sphere, capsule, plane, and quad). This is a limitation of SL, and you can't load things like meshes without client mods.
+Prefab loader allows you to load unity `.prefab` files directly into SCP SL. However, it only supports primitive types (cube, cylinder, sphere, capsule, plane, and quad). This is a limitation of SL, and you can't load things like meshes without client mods.
 
 This is a developer dependency, for the most part. This means regular server owners probably won't ever care about this, but it makes loading custom objects easy.
 
