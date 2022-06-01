@@ -8,6 +8,9 @@ using YamlDotNet.RepresentationModel;
 
 namespace PrefabLoader
 {
+    /// <summary>
+    /// A prefab that has not yet been spawned.
+    /// </summary>
     public class Prefab
     {
         internal static Dictionary<string, YamlScalarNode> ScalarNodes = new Dictionary<string, YamlScalarNode>()
@@ -131,6 +134,13 @@ namespace PrefabLoader
             }
         }
 
+        /// <summary>
+        /// Spawns the prefab onto the clients.
+        /// </summary>
+        /// <param name="position">The position to spawn it at.</param>
+        /// <param name="rotation">The rotation to spawn it with.</param>
+        /// <param name="players">The players to spawn it on (broken).</param>
+        /// <returns>The <see cref="SpawnedPrefab"/></returns>
         public SpawnedPrefab Spawn(Vector3 position = default, Quaternion rotation = default, List<Player> players = null)
         {
             // Currently can't support spawning on specific players?
@@ -143,6 +153,9 @@ namespace PrefabLoader
         }
     }
 
+    /// <summary>
+    /// A prefab that has been spawned.
+    /// </summary>
     public class SpawnedPrefab
     {
         public GameObject Origin { get; private set; }
@@ -198,17 +211,28 @@ namespace PrefabLoader
             }
         }
 
+        /// <summary>
+        /// Sets the position of the origin and translates the entire prefab to the location.
+        /// </summary>
+        /// <param name="position">The position to place the object.</param>
         public void SetPosition(Vector3 position)
         {
             Origin.transform.position = position;
         }
 
+        /// <summary>
+        /// Sets the rotation of the origin and rotates the entire prefab to the rotation.
+        /// </summary>
+        /// <param name="rotation">The rotation of the object.</param>
         public void SetRotation(Quaternion rotation)
         {
             Origin.transform.rotation = rotation;
         }
     }
 
+    /// <summary>
+    /// Holds data necessary to spawn a primitive.
+    /// </summary>
     public class PrimitiveData
     {
         public PrimitiveType PrimitiveType { get; set; }

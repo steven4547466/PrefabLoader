@@ -5,6 +5,11 @@ namespace PrefabLoader
 {
     public static class API
     {
+        /// <summary>
+        /// Loads a prefab from a file.
+        /// </summary>
+        /// <param name="file">The file location to get the data from.</param>
+        /// <returns>An unspawned <see cref="Prefab"/>.</returns>
         public static Prefab LoadPrefab(string file)
         {
             return LoadPrefab(new StringReader(File.ReadAllText(file)));
@@ -17,6 +22,11 @@ namespace PrefabLoader
             return new Prefab(stream);
         }
 
+        /// <summary>
+        /// Loads a material from a file.
+        /// </summary>
+        /// <param name="materialFile">The file location to get the material data from.</param>
+        /// <param name="metaDataFile">The material's metadata file location.</param>
         public static void LoadMaterial(string materialFile, string metaDataFile)
         {
             YamlStream stream = new YamlStream();
