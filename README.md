@@ -4,6 +4,9 @@ Prefab loader allows you to load unity `.prefab` files directly into SCP SL. How
 
 This is a developer dependency, for the most part. This means regular server owners probably won't ever care about this, but it makes loading custom objects easy.
 
+# What about MER?
+[MER](https://github.com/Michal78900/MapEditorReborn/) is a bigger plugin for map editing (hence the name). It has more features, such as rigidbodies and animations. PrefabLoader is made to be as lightweight as possible and offer exactly what it says: loading prefabs. if you need more functionality, then use MapEditorReborn. If you just need to load a couple staticly positioned prefabs, then use this. It really isn't that hard to understand the differences between the two. What I don't want is for *people* to try and start some kinda war between this, it's not that big of a deal. They can both co-exist, PrefabLoader accomplishes a subsection of what MER does. However, if you just need that subsection (spawning prefabs which don't have animations or physics), your server will legitimately just be more performant because it doesn't have all the extra overhead.
+
 # Features
 - Primitive prefab loading
 - Parenting/offsetting
