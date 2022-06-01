@@ -15,7 +15,7 @@ In Unity:
 1. Open up a unity project
 2. Go to Edit->Project Settings->Editor. Find `Asset Serialization`. Set it to `Force Text`
 3. Make your prefab
-4. Get the location of the prefab
+4. Get the location of the prefab (right click it in your asset browser then "Show in explorer")
 
 From code (assuming it's installed and referenced):
 1. Load materials first using `PrefabLoader.API.LoadMaterial(materialFileLocation, materialMetaDataLocation)` (metadata is needed to get the guid of the material)
