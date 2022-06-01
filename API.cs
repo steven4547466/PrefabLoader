@@ -28,7 +28,7 @@ namespace PrefabLoader
             YamlStream stream = new YamlStream();
             stream.Load(new StringReader(File.ReadAllText(metaDataFile)));
 
-            string id = ((YamlMappingNode)stream.Documents[0].RootNode).Children[new YamlScalarNode("guid")].ToString();
+            string id = ((YamlMappingNode)stream.Documents[0].RootNode).Children[Prefab.ScalarNodes["guid"]].ToString();
 
             LoadMaterial(new StringReader(File.ReadAllText(materialFile)), id);
         }

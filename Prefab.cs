@@ -12,11 +12,32 @@ namespace PrefabLoader
 {
     public class Prefab
     {
-        public List<PrimitiveData> PrimitiveData = new List<PrimitiveData>();
+        internal static Dictionary<string, YamlScalarNode> ScalarNodes = new Dictionary<string, YamlScalarNode>()
+        {
+            { "GameObject", new YamlScalarNode("GameObject") },
+            { "m_Component", new YamlScalarNode("m_Component") },
+            { "component", new YamlScalarNode("component") },
+            { "fileID", new YamlScalarNode("fileID") },
+            { "Transform", new YamlScalarNode("Transform") },
+            { "m_LocalPosition", new YamlScalarNode("m_LocalPosition") },
+            { "m_LocalRotation", new YamlScalarNode("m_LocalRotation") },
+            { "m_LocalScale", new YamlScalarNode("m_LocalScale") },
+            { "x", new YamlScalarNode("x") },
+            { "y", new YamlScalarNode("y") },
+            { "z", new YamlScalarNode("z") },
+            { "w", new YamlScalarNode("w") },
+            { "m_Father", new YamlScalarNode("m_Father") },
+            { "MeshFilter", new YamlScalarNode("MeshFilter") },
+            { "m_Mesh", new YamlScalarNode("m_Mesh") },
+            { "MeshRenderer", new YamlScalarNode("MeshRenderer") },
+            { "m_Materials", new YamlScalarNode("m_Materials") },
+            { "guid", new YamlScalarNode("guid") },
+        };
         
+        public List<PrimitiveData> PrimitiveData = new List<PrimitiveData>();
+
         public Prefab(YamlStream yaml)
         {
-            Log.Info("Loading");
             Vector3 nextPosition = Vector3.zero;
             Quaternion nextRotation = default;
             Vector3 nextScale = Vector3.zero;
@@ -28,7 +49,7 @@ namespace PrefabLoader
             for (int i = 0; i < yaml.Documents.Count; i++)
             {                
                 var mapping = (YamlMappingNode)yaml.Documents[i].RootNode;
-                if (mapping.Children.TryGetValue(new YamlScalarNode("GameObject"), out var go))
+                if (mapping.Children.TryGetValue(ScalarNodes["GameObject"], out var go))
                 {
                     if (nextType != null)
                     {
@@ -42,32 +63,32 @@ namespace PrefabLoader
                     }
                     
                     YamlMappingNode gameObject = (YamlMappingNode)go;
-                    var components = gameObject.Children[new YamlScalarNode("m_Component")];
+                    var components = gameObject.Children[ScalarNodes["m_Component"]];
                     YamlMappingNode transform = (YamlMappingNode)components[0];
-                    YamlMappingNode comp = (YamlMappingNode) transform.Children[new YamlScalarNode("component")];
-                    nextTransformId = comp.Children[new YamlScalarNode("fileID")].ToString();
+                    YamlMappingNode comp = (YamlMappingNode) transform.Children[ScalarNodes["component"]];
+                    nextTransformId = comp.Children[ScalarNodes["fileID"]].ToString();
                 }
-                else if (mapping.Children.TryGetValue(new YamlScalarNode("Transform"), out var t))
+                else if (mapping.Children.TryGetValue(ScalarNodes["Transform"], out var t))
                 {
                     YamlMappingNode transform = (YamlMappingNode)t;
-                    var position = (YamlMappingNode)transform.Children[new YamlScalarNode("m_LocalPosition")];
-                    var rotation = (YamlMappingNode)transform.Children[new YamlScalarNode("m_LocalRotation")];
-                    var scale = (YamlMappingNode)transform.Children[new YamlScalarNode("m_LocalScale")];
-                    nextPosition = new Vector3(float.Parse(position.Children[new YamlScalarNode("x")].ToString()), float.Parse(position.Children[new YamlScalarNode("y")].ToString()), float.Parse(position.Children[new YamlScalarNode("z")].ToString()));
-                    nextRotation = new Quaternion(float.Parse(rotation.Children[new YamlScalarNode("x")].ToString()), float.Parse(rotation.Children[new YamlScalarNode("y")].ToString()), float.Parse(rotation.Children[new YamlScalarNode("z")].ToString()), float.Parse(rotation.Children[new YamlScalarNode("w")].ToString()));
-                    nextScale = new Vector3(float.Parse(scale.Children[new YamlScalarNode("x")].ToString()), float.Parse(scale.Children[new YamlScalarNode("y")].ToString()), float.Parse(scale.Children[new YamlScalarNode("z")].ToString()));
+                    var position = (YamlMappingNode)transform.Children[ScalarNodes["m_LocalPosition"]];
+                    var rotation = (YamlMappingNode)transform.Children[ScalarNodes["m_LocalRotation"]];
+                    var scale = (YamlMappingNode)transform.Children[ScalarNodes["m_LocalScale"]];
+                    nextPosition = new Vector3(float.Parse(position.Children[ScalarNodes["x"]].ToString()), float.Parse(position.Children[ScalarNodes["y"]].ToString()), float.Parse(position.Children[ScalarNodes["z"]].ToString()));
+                    nextRotation = new Quaternion(float.Parse(rotation.Children[ScalarNodes["x"]].ToString()), float.Parse(rotation.Children[ScalarNodes["y"]].ToString()), float.Parse(rotation.Children[ScalarNodes["z"]].ToString()), float.Parse(rotation.Children[ScalarNodes["w"]].ToString()));
+                    nextScale = new Vector3(float.Parse(scale.Children[ScalarNodes["x"]].ToString()), float.Parse(scale.Children[ScalarNodes["y"]].ToString()), float.Parse(scale.Children[ScalarNodes["z"]].ToString()));
                     
-                    var parent = (YamlMappingNode)transform.Children[new YamlScalarNode("m_Father")];
+                    var parent = (YamlMappingNode)transform.Children[ScalarNodes["m_Father"]];
 
-                    nextParentTransformId = parent.Children[new YamlScalarNode("fileID")].ToString();
+                    nextParentTransformId = parent.Children[ScalarNodes["fileID"]].ToString();
                 }
-                else if (mapping.Children.TryGetValue(new YamlScalarNode("MeshFilter"), out var mf))
+                else if (mapping.Children.TryGetValue(ScalarNodes["MeshFilter"], out var mf))
                 {
                     YamlMappingNode meshFilter = (YamlMappingNode)mf;
 
-                    YamlMappingNode mesh = (YamlMappingNode)meshFilter.Children[new YamlScalarNode("m_Mesh")];
+                    YamlMappingNode mesh = (YamlMappingNode)meshFilter.Children[ScalarNodes["m_Mesh"]];
 
-                    int identifier = int.Parse(mesh.Children[new YamlScalarNode("fileID")].ToString());
+                    int identifier = int.Parse(mesh.Children[ScalarNodes["fileID"]].ToString());
                     
                     switch(identifier)
                     {
@@ -94,13 +115,13 @@ namespace PrefabLoader
                             break;
                     }
                 } 
-                else if (mapping.Children.TryGetValue(new YamlScalarNode("MeshRenderer"), out var mr))
+                else if (mapping.Children.TryGetValue(ScalarNodes["MeshRenderer"], out var mr))
                 {
                     YamlMappingNode meshRenderer = (YamlMappingNode)mr;
 
-                    YamlMappingNode materials = (YamlMappingNode)meshRenderer.Children[new YamlScalarNode("m_Materials")][0];
+                    YamlMappingNode materials = (YamlMappingNode)meshRenderer.Children[ScalarNodes["m_Materials"]][0];
 
-                    nextColor = Material.GetColor(materials.Children[new YamlScalarNode("guid")].ToString());
+                    nextColor = Material.GetColor(materials.Children[ScalarNodes["guid"]].ToString());
                 }
             }
 
