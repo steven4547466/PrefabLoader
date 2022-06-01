@@ -23,13 +23,14 @@ namespace PrefabLoader
             return new Prefab(stream);
         }
 
-        public static void LoadMaterial(string file)
+        public static void LoadMaterial(string materialFile, string metaDataFile)
         {
-            string text = File.ReadAllText(file);
-            
-            // idk how to read yml tags directly, deal with it.
-            string id = text.Substring(52, 10).Split('\n')[0].Trim();
-            LoadMaterial(new StringReader(text), id);
+            YamlStream stream = new YamlStream();
+            stream.Load(new StringReader(File.ReadAllText(metaDataFile)));
+
+            string id = ((YamlMappingNode)stream.Documents[0].RootNode).Children[new YamlScalarNode("guid")].ToString();
+
+            LoadMaterial(new StringReader(File.ReadAllText(materialFile)), id);
         }
         
         public static void LoadMaterial(StringReader reader, string id)

@@ -32,7 +32,6 @@ namespace PrefabLoader
                 {
                     if (nextType != null)
                     {
-                        Log.Info(nextColor);
                         PrimitiveData data = new PrimitiveData((PrimitiveType)nextType, nextPosition, nextRotation, nextScale, nextTransformId, nextColor);
                         PrimitiveData.Add(data);
                         data.SetParent(nextParentTransformId, PrimitiveData);
@@ -101,7 +100,7 @@ namespace PrefabLoader
 
                     YamlMappingNode materials = (YamlMappingNode)meshRenderer.Children[new YamlScalarNode("m_Materials")][0];
 
-                    nextColor = Material.GetColor(materials.Children[new YamlScalarNode("fileID")].ToString());
+                    nextColor = Material.GetColor(materials.Children[new YamlScalarNode("guid")].ToString());
                 }
             }
 
