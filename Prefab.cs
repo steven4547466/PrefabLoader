@@ -45,22 +45,22 @@ namespace PrefabLoader
             string nextTransformId = null;
             string nextParentTransformId = null;
             Color nextColor = Color.white;
-            PrimitiveType? nextType = null;
+            bool nextIsEmpty = true;
+            PrimitiveType nextType = PrimitiveType.Cube;
 
             for (int i = 0; i < yaml.Documents.Count; i++)
             {
                 var mapping = (YamlMappingNode)yaml.Documents[i].RootNode;
                 if (mapping.Children.TryGetValue(ScalarNodes["GameObject"], out var go))
                 {
-                    if (nextType != null)
+                    if (i > 0)
                     {
-                        PrimitiveData data = new PrimitiveData((PrimitiveType)nextType, nextPosition, nextRotation, nextScale, nextTransformId, nextColor);
+                        PrimitiveData data = new PrimitiveData(nextType, nextPosition, nextRotation, nextScale, nextTransformId, nextColor, nextIsEmpty);
                         PrimitiveData.Add(data);
                         data.SetParent(nextParentTransformId, PrimitiveData);
-
                         nextParentTransformId = null;
-                        nextType = null;
                         nextColor = Color.white;
+                        nextIsEmpty = true;
                     }
 
                     YamlMappingNode gameObject = (YamlMappingNode)go;
@@ -94,25 +94,32 @@ namespace PrefabLoader
                     switch (identifier)
                     {
                         case 10202:
+                            nextIsEmpty = false;
                             nextType = PrimitiveType.Cube;
                             break;
                         case 10206:
+                            nextIsEmpty = false;
                             nextType = PrimitiveType.Cylinder;
                             break;
                         case 10207:
+                            nextIsEmpty = false;
                             nextType = PrimitiveType.Sphere;
                             break;
                         case 10208:
+                            nextIsEmpty = false;
                             nextType = PrimitiveType.Capsule;
                             break;
                         case 10209:
+                            nextIsEmpty = false;
                             nextType = PrimitiveType.Plane;
                             break;
                         case 10210:
+                            nextIsEmpty = false;
                             nextType = PrimitiveType.Quad;
                             break;
                         default:
-                            nextType = null;
+                            Log.Error("Unknown primitive type: " + identifier);
+                            nextType = PrimitiveType.Cube;
                             break;
                     }
                 }
@@ -126,9 +133,9 @@ namespace PrefabLoader
                 }
             }
 
-            if (nextType != null)
-            {
-                PrimitiveData data = new PrimitiveData((PrimitiveType)nextType, nextPosition, nextRotation, nextScale, nextTransformId, nextColor);
+            
+            {  // Cry about it, if this isn't here, I can't use data in the loop
+                PrimitiveData data = new PrimitiveData(nextType, nextPosition, nextRotation, nextScale, nextTransformId, nextColor, nextIsEmpty);
                 PrimitiveData.Add(data);
                 data.SetParent(nextParentTransformId, PrimitiveData);
             }
@@ -165,49 +172,75 @@ namespace PrefabLoader
         {
             Origin = gameObject;
 
-            Dictionary<string, PrimitiveObjectToy> primitiveMap = new Dictionary<string, PrimitiveObjectToy>();
-
+            Dictionary<string, Transform> parentMap = new Dictionary<string, Transform>();
+            
             foreach (PrimitiveData primitiveData in primitives)
             {
-                PrimitiveObjectToy p = UnityEngine.Object.Instantiate(ToysHelper.PrimitiveBaseObject);
-
-                p.transform.position = primitiveData.Position;
-                p.NetworkPrimitiveType = primitiveData.PrimitiveType;
-                p.NetworkMaterialColor = primitiveData.Color;
-                p.Scale = primitiveData.Scale;
-                p.transform.rotation = primitiveData.Rotation;
-
-                if (primitiveData.ParentTransformId != null)
+                if (primitiveData.IsEmpty)
                 {
-                    if (primitiveMap.TryGetValue(primitiveData.ParentTransformId, out PrimitiveObjectToy parent))
-                        p.transform.SetParent(parent.transform, false);
-                    else
+                    GameObject empty = new GameObject();
+                    empty.transform.position = primitiveData.Position;
+                    empty.transform.localScale = primitiveData.Scale;
+                    empty.transform.rotation = primitiveData.Rotation;
+                    
+                    if (primitiveData.ParentTransformId != null)
                     {
-                        Log.Error("Attempted to spawn child before parent...");
-                    }
-                }
-                else
-                {
-                    p.transform.SetParent(Origin.transform, false);
-                }
-
-                if (spawn)
-                {
-                    if (players != null)
-                    {
-                        foreach (Player player in players)
+                        if (parentMap.TryGetValue(primitiveData.ParentTransformId, out Transform parent))
+                            empty.transform.SetParent(parent, false);
+                        else
                         {
-                            Server.SendSpawnMessage.Invoke(null, new object[2] { p.netIdentity, player.Connection });
+                            Log.Error("Attempted to spawn child before parent...");
                         }
                     }
                     else
                     {
-                        NetworkServer.Spawn(p.gameObject);
+                        empty.transform.SetParent(Origin.transform, false);
                     }
+                    
+                    parentMap.Add(primitiveData.TransformId, empty.transform);
                 }
+                else
+                {
+                    PrimitiveObjectToy p = Object.Instantiate(ToysHelper.PrimitiveBaseObject);
 
-                primitiveMap.Add(primitiveData.TransformId, p);
-                Primitives.Add(p);
+                    p.transform.position = primitiveData.Position;
+                    p.NetworkPrimitiveType = primitiveData.PrimitiveType;
+                    p.NetworkMaterialColor = primitiveData.Color;
+                    p.transform.localScale = primitiveData.Scale;
+                    p.transform.rotation = primitiveData.Rotation;
+
+                    if (primitiveData.ParentTransformId != null)
+                    {
+                        if (parentMap.TryGetValue(primitiveData.ParentTransformId, out Transform parent))
+                            p.transform.SetParent(parent, false);
+                        else
+                        {
+                            Log.Error("Attempted to spawn child before parent...");
+                        }
+                    }
+                    else
+                    {
+                        p.transform.SetParent(Origin.transform, false);
+                    }
+
+                    if (spawn)
+                    {
+                        if (players != null)
+                        {
+                            foreach (Player player in players)
+                            {
+                                Server.SendSpawnMessage.Invoke(null, new object[2] { p.netIdentity, player.Connection });
+                            }
+                        }
+                        else
+                        {
+                            NetworkServer.Spawn(p.gameObject);
+                        }
+                    }
+
+                    parentMap.Add(primitiveData.TransformId, p.transform);
+                    Primitives.Add(p);
+                }
             }
         }
 
@@ -242,9 +275,11 @@ namespace PrefabLoader
         public string TransformId { get; set; }
         public Color Color { get; set; }
 
+        public bool IsEmpty { get; set; }
+
         public string ParentTransformId { get; set; } = null;
 
-        public PrimitiveData(PrimitiveType primitiveType, Vector3 position, Quaternion rotation, Vector3 scale, string transformId, Color color)
+        public PrimitiveData(PrimitiveType primitiveType, Vector3 position, Quaternion rotation, Vector3 scale, string transformId, Color color, bool isEmpty = false)
         {
             PrimitiveType = primitiveType;
             Position = position;
@@ -252,6 +287,7 @@ namespace PrefabLoader
             Scale = scale;
             TransformId = transformId;
             Color = color;
+            IsEmpty = isEmpty;
         }
 
         public void SetParent(string parentTransformId, List<PrimitiveData> primitiveData)
