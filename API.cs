@@ -1,10 +1,4 @@
-﻿using Exiled.API.Features;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
 using YamlDotNet.RepresentationModel;
 
 namespace PrefabLoader
@@ -32,7 +26,7 @@ namespace PrefabLoader
 
             LoadMaterial(new StringReader(File.ReadAllText(materialFile)), id);
         }
-        
+
         public static void LoadMaterial(StringReader reader, string id)
         {
             YamlStream stream = new YamlStream();

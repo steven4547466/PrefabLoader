@@ -1,9 +1,4 @@
-﻿using Exiled.API.Features;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using YamlDotNet.RepresentationModel;
 
@@ -12,7 +7,7 @@ namespace PrefabLoader
     public class Material
     {
         internal static Dictionary<string, Material> Materials { get; } = new Dictionary<string, Material>();
-        
+
         internal static Dictionary<string, YamlScalarNode> ScalarNodes = new Dictionary<string, YamlScalarNode>()
         {
             { "Material", new YamlScalarNode("Material") },
@@ -38,7 +33,7 @@ namespace PrefabLoader
             if (mapping.Children.TryGetValue(ScalarNodes["Material"], out var mat))
             {
                 YamlMappingNode material = (YamlMappingNode)mat;
-                
+
                 YamlMappingNode props = (YamlMappingNode)material.Children[ScalarNodes["m_SavedProperties"]];
 
                 YamlMappingNode colors = (YamlMappingNode)((YamlMappingNode)props.Children[ScalarNodes["m_Colors"]][0]).Children[ScalarNodes["_Color"]];
@@ -54,7 +49,7 @@ namespace PrefabLoader
             if (Materials.TryGetValue(id, out Material material))
             {
                 return material.Color;
-            } 
+            }
             else
             {
                 return Color.white;

@@ -1,10 +1,8 @@
-﻿using Exiled.API.Features;
+﻿using AdminToys;
+using Exiled.API.Features;
 using Exiled.API.Features.Toys;
-using System;
+using Mirror;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using YamlDotNet.RepresentationModel;
 
@@ -33,7 +31,7 @@ namespace PrefabLoader
             { "m_Materials", new YamlScalarNode("m_Materials") },
             { "guid", new YamlScalarNode("guid") },
         };
-        
+
         public List<PrimitiveData> PrimitiveData = new List<PrimitiveData>();
 
         public Prefab(YamlStream yaml)
@@ -47,7 +45,7 @@ namespace PrefabLoader
             PrimitiveType? nextType = null;
 
             for (int i = 0; i < yaml.Documents.Count; i++)
-            {                
+            {
                 var mapping = (YamlMappingNode)yaml.Documents[i].RootNode;
                 if (mapping.Children.TryGetValue(ScalarNodes["GameObject"], out var go))
                 {
@@ -61,11 +59,11 @@ namespace PrefabLoader
                         nextType = null;
                         nextColor = Color.white;
                     }
-                    
+
                     YamlMappingNode gameObject = (YamlMappingNode)go;
                     var components = gameObject.Children[ScalarNodes["m_Component"]];
                     YamlMappingNode transform = (YamlMappingNode)components[0];
-                    YamlMappingNode comp = (YamlMappingNode) transform.Children[ScalarNodes["component"]];
+                    YamlMappingNode comp = (YamlMappingNode)transform.Children[ScalarNodes["component"]];
                     nextTransformId = comp.Children[ScalarNodes["fileID"]].ToString();
                 }
                 else if (mapping.Children.TryGetValue(ScalarNodes["Transform"], out var t))
@@ -77,7 +75,7 @@ namespace PrefabLoader
                     nextPosition = new Vector3(float.Parse(position.Children[ScalarNodes["x"]].ToString()), float.Parse(position.Children[ScalarNodes["y"]].ToString()), float.Parse(position.Children[ScalarNodes["z"]].ToString()));
                     nextRotation = new Quaternion(float.Parse(rotation.Children[ScalarNodes["x"]].ToString()), float.Parse(rotation.Children[ScalarNodes["y"]].ToString()), float.Parse(rotation.Children[ScalarNodes["z"]].ToString()), float.Parse(rotation.Children[ScalarNodes["w"]].ToString()));
                     nextScale = new Vector3(float.Parse(scale.Children[ScalarNodes["x"]].ToString()), float.Parse(scale.Children[ScalarNodes["y"]].ToString()), float.Parse(scale.Children[ScalarNodes["z"]].ToString()));
-                    
+
                     var parent = (YamlMappingNode)transform.Children[ScalarNodes["m_Father"]];
 
                     nextParentTransformId = parent.Children[ScalarNodes["fileID"]].ToString();
@@ -89,8 +87,8 @@ namespace PrefabLoader
                     YamlMappingNode mesh = (YamlMappingNode)meshFilter.Children[ScalarNodes["m_Mesh"]];
 
                     int identifier = int.Parse(mesh.Children[ScalarNodes["fileID"]].ToString());
-                    
-                    switch(identifier)
+
+                    switch (identifier)
                     {
                         case 10202:
                             nextType = PrimitiveType.Cube;
@@ -114,7 +112,7 @@ namespace PrefabLoader
                             nextType = null;
                             break;
                     }
-                } 
+                }
                 else if (mapping.Children.TryGetValue(ScalarNodes["MeshRenderer"], out var mr))
                 {
                     YamlMappingNode meshRenderer = (YamlMappingNode)mr;
@@ -132,16 +130,15 @@ namespace PrefabLoader
                 data.SetParent(nextParentTransformId, PrimitiveData);
             }
         }
-        
-        public SpawnedPrefab Spawn()
-        {
-            return new SpawnedPrefab(new GameObject(), PrimitiveData);
-        }
 
-        public SpawnedPrefab Spawn(Vector3 position)
+        public SpawnedPrefab Spawn(Vector3 position = default, Quaternion rotation = default, List<Player> players = null)
         {
-            SpawnedPrefab prefab = Spawn();
+            // Currently can't support spawning on specific players?
+            // I actually don't know why this doesn't work. It also causes some major desync and lag.
+            SpawnedPrefab prefab = new SpawnedPrefab(new GameObject(), PrimitiveData, true, null);
             prefab.Origin.transform.position = position;
+            prefab.Origin.transform.rotation = rotation;
+
             return prefab;
         }
     }
@@ -149,28 +146,28 @@ namespace PrefabLoader
     public class SpawnedPrefab
     {
         public GameObject Origin { get; private set; }
-        private List<Primitive> Primitives = new List<Primitive>();
+        internal List<PrimitiveObjectToy> Primitives = new List<PrimitiveObjectToy>();
 
-        public SpawnedPrefab(GameObject gameObject, List<PrimitiveData> primitives)
+        public SpawnedPrefab(GameObject gameObject, List<PrimitiveData> primitives, bool spawn = true, List<Player> players = null)
         {
             Origin = gameObject;
 
-            Dictionary<string, Primitive> primitiveMap = new Dictionary<string, Primitive>();
+            Dictionary<string, PrimitiveObjectToy> primitiveMap = new Dictionary<string, PrimitiveObjectToy>();
 
             foreach (PrimitiveData primitiveData in primitives)
             {
-                Primitive p = Primitive.Create();
+                PrimitiveObjectToy p = UnityEngine.Object.Instantiate(ToysHelper.PrimitiveBaseObject);
 
-                p.Position = primitiveData.Position;
-                p.Type = primitiveData.PrimitiveType;
-                p.Color = primitiveData.Color;
+                p.transform.position = primitiveData.Position;
+                p.NetworkPrimitiveType = primitiveData.PrimitiveType;
+                p.NetworkMaterialColor = primitiveData.Color;
                 p.Scale = primitiveData.Scale;
-                p.Rotation = primitiveData.Rotation;
+                p.transform.rotation = primitiveData.Rotation;
 
                 if (primitiveData.ParentTransformId != null)
                 {
-                    if (primitiveMap.TryGetValue(primitiveData.ParentTransformId, out Primitive parent))
-                        p.Base.transform.SetParent(parent.Base.transform, false);
+                    if (primitiveMap.TryGetValue(primitiveData.ParentTransformId, out PrimitiveObjectToy parent))
+                        p.transform.SetParent(parent.transform, false);
                     else
                     {
                         Log.Error("Attempted to spawn child before parent...");
@@ -178,7 +175,22 @@ namespace PrefabLoader
                 }
                 else
                 {
-                    p.Base.transform.SetParent(Origin.transform, false);
+                    p.transform.SetParent(Origin.transform, false);
+                }
+
+                if (spawn)
+                {
+                    if (players != null)
+                    {
+                        foreach (Player player in players)
+                        {
+                            Server.SendSpawnMessage.Invoke(null, new object[2] { p.netIdentity, player.Connection });
+                        }
+                    }
+                    else
+                    {
+                        NetworkServer.Spawn(p.gameObject);
+                    }
                 }
 
                 primitiveMap.Add(primitiveData.TransformId, p);
@@ -222,7 +234,7 @@ namespace PrefabLoader
         {
             if (parentTransformId == "0")
                 return;
-            
+
             ParentTransformId = parentTransformId;
         }
     }
