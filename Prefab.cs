@@ -133,7 +133,7 @@ namespace PrefabLoader
                 }
             }
 
-            
+
             {  // Cry about it, if this isn't here, I can't use data in the loop
                 PrimitiveData data = new PrimitiveData(nextType, nextPosition, nextRotation, nextScale, nextTransformId, nextColor, nextIsEmpty);
                 PrimitiveData.Add(data);
@@ -152,7 +152,7 @@ namespace PrefabLoader
         {
             // Currently can't support spawning on specific players?
             // I actually don't know why this doesn't work. It also causes some major desync and lag.
-            SpawnedPrefab prefab = new SpawnedPrefab(new GameObject(), PrimitiveData, true, null);
+            SpawnedPrefab prefab = new SpawnedPrefab(new GameObject(), PrimitiveData, true, players);
             prefab.Origin.transform.position = position;
             prefab.Origin.transform.rotation = rotation;
 
@@ -165,15 +165,21 @@ namespace PrefabLoader
     /// </summary>
     public class SpawnedPrefab
     {
+        internal static List<SpawnedPrefab> SpawnedPrefabs = new List<SpawnedPrefab>();
+
         public GameObject Origin { get; private set; }
+
+        internal List<Player> AllowedPlayers = null;
         internal List<PrimitiveObjectToy> Primitives = new List<PrimitiveObjectToy>();
 
         public SpawnedPrefab(GameObject gameObject, List<PrimitiveData> primitives, bool spawn = true, List<Player> players = null)
         {
             Origin = gameObject;
 
+            AllowedPlayers = players;
+
             Dictionary<string, Transform> parentMap = new Dictionary<string, Transform>();
-            
+
             foreach (PrimitiveData primitiveData in primitives)
             {
                 if (primitiveData.IsEmpty)
@@ -182,7 +188,7 @@ namespace PrefabLoader
                     empty.transform.position = primitiveData.Position;
                     empty.transform.localScale = primitiveData.Scale;
                     empty.transform.rotation = primitiveData.Rotation;
-                    
+
                     if (primitiveData.ParentTransformId != null)
                     {
                         if (parentMap.TryGetValue(primitiveData.ParentTransformId, out Transform parent))
@@ -196,7 +202,7 @@ namespace PrefabLoader
                     {
                         empty.transform.SetParent(Origin.transform, false);
                     }
-                    
+
                     parentMap.Add(primitiveData.TransformId, empty.transform);
                 }
                 else
@@ -225,16 +231,14 @@ namespace PrefabLoader
 
                     if (spawn)
                     {
+                        NetworkServer.Spawn(p.gameObject);
                         if (players != null)
                         {
-                            foreach (Player player in players)
+                            foreach (Player player in Player.List)
                             {
-                                Server.SendSpawnMessage.Invoke(null, new object[2] { p.netIdentity, player.Connection });
+                                if (!players.Contains(player))
+                                    player.Connection.Send(new ObjectDestroyMessage() { netId = p.netId });
                             }
-                        }
-                        else
-                        {
-                            NetworkServer.Spawn(p.gameObject);
                         }
                     }
 
@@ -242,6 +246,8 @@ namespace PrefabLoader
                     Primitives.Add(p);
                 }
             }
+
+            SpawnedPrefabs.Add(this);
         }
 
         /// <summary>
@@ -260,6 +266,23 @@ namespace PrefabLoader
         public void SetRotation(Quaternion rotation)
         {
             Origin.transform.rotation = rotation;
+        }
+
+        /// <summary>
+        /// Destroys a spawned prefab.
+        /// </summary>
+        public void Destroy()
+        {
+            foreach (PrimitiveObjectToy p in Primitives)
+            {
+                NetworkServer.Destroy(p.gameObject);
+            }
+
+            Primitives = null;
+            AllowedPlayers = null;
+            Origin = null;
+
+            SpawnedPrefabs.Remove(this);
         }
     }
 

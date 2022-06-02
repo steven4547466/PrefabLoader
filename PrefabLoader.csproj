@@ -97,6 +97,7 @@
   <ItemGroup>
     <Compile Include="API.cs" />
     <Compile Include="Config.cs" />
+    <Compile Include="EventHandlers.cs" />
     <Compile Include="Material.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Prefab.cs" />
