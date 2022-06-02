@@ -146,12 +146,10 @@ namespace PrefabLoader
         /// </summary>
         /// <param name="position">The position to spawn it at.</param>
         /// <param name="rotation">The rotation to spawn it with.</param>
-        /// <param name="players">The players to spawn it on (broken).</param>
+        /// <param name="players">The players to spawn it on.</param>
         /// <returns>The <see cref="SpawnedPrefab"/></returns>
         public SpawnedPrefab Spawn(Vector3 position = default, Quaternion rotation = default, List<Player> players = null)
         {
-            // Currently can't support spawning on specific players?
-            // I actually don't know why this doesn't work. It also causes some major desync and lag.
             SpawnedPrefab prefab = new SpawnedPrefab(new GameObject(), PrimitiveData, true, players);
             prefab.Origin.transform.position = position;
             prefab.Origin.transform.rotation = rotation;
