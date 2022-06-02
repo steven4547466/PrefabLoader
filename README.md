@@ -24,3 +24,7 @@ From code (assuming it's installed and referenced):
 1. Load materials first using `PrefabLoader.API.LoadMaterial(materialFileLocation, materialMetaDataLocation)` (metadata is needed to get the guid of the material)
 2. Load the prefab using `PrefabLoader.API.LoadPrefab(prefabFileLocation)`. This will return a `Prefab` object which you can then use `Prefab.Spawn()` on
 3. Use the `SpawnedPrefab` returned from `Prefab.Spawn()` to manipulate it (rotation, position)
+
+# Important notes
+- You can call `Prefab.Spawn()` as many times as you want and it will always return a unique `SpawnedPrefab`
+- `SpawnedPrefab`s are destroyed on round restart. This means any references you have to a spawned prefab should be cleared on round restart unless you plan on repopulating the memory. If you don't, congrats you have a memory leak
