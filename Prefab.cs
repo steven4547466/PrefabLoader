@@ -207,11 +207,11 @@ namespace PrefabLoader
                 {
                     PrimitiveObjectToy p = Object.Instantiate(ToysHelper.PrimitiveBaseObject);
 
-                    p.transform.position = primitiveData.Position;
+                    p.NetworkPosition = primitiveData.Position;
                     p.NetworkPrimitiveType = primitiveData.PrimitiveType;
                     p.NetworkMaterialColor = primitiveData.Color;
-                    p.transform.localScale = primitiveData.Scale;
-                    p.transform.rotation = primitiveData.Rotation;
+                    p.NetworkScale = primitiveData.Scale;
+                    p.NetworkRotation = new LowPrecisionQuaternion(primitiveData.Rotation);
 
                     if (primitiveData.ParentTransformId != null)
                     {
@@ -252,18 +252,34 @@ namespace PrefabLoader
         /// Sets the position of the origin and translates the entire prefab to the location.
         /// </summary>
         /// <param name="position">The position to place the object.</param>
-        public void SetPosition(Vector3 position)
+        /// <param name="forceUpdate">Whether or not to forcefully update the network position this frame.</param>
+        public void SetPosition(Vector3 position, bool forceUpdate = false)
         {
             Origin.transform.position = position;
+            if (forceUpdate)
+            {
+                foreach (PrimitiveObjectToy primitive in Primitives)
+                {
+                    primitive.NetworkPosition = primitive.transform.position;
+                }
+            }
         }
 
         /// <summary>
         /// Sets the rotation of the origin and rotates the entire prefab to the rotation.
         /// </summary>
         /// <param name="rotation">The rotation of the object.</param>
-        public void SetRotation(Quaternion rotation)
+        /// /// <param name="forceUpdate">Whether or not to forcefully update the network rotation this frame.</param>
+        public void SetRotation(Quaternion rotation, bool forceUpdate = false)
         {
             Origin.transform.rotation = rotation;
+            if (forceUpdate)
+            {
+                foreach (PrimitiveObjectToy primitive in Primitives)
+                {
+                    primitive.Rotation = new LowPrecisionQuaternion(primitive.transform.rotation);
+                }
+            }
         }
 
         /// <summary>
@@ -278,6 +294,8 @@ namespace PrefabLoader
 
             Primitives = null;
             AllowedPlayers = null;
+
+            Object.Destroy(Origin);
             Origin = null;
 
             SpawnedPrefabs.Remove(this);
